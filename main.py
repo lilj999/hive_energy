@@ -69,19 +69,6 @@ if __name__ == "__main__":
     consumption_start_timestamp= loaded_data['start_timestamp'][2]
     solar_start_timestamp= loaded_data['start_timestamp'][6]
     
-    # TODO: to align. here Assume the series is aligned by timestamp
-    aligned_consumption_data, aligned_solar_data, aligned_time_stamps=align_two(consumption_data, consumption_start_timestamp, solar_data, solar_start_timestamp)
-    # 打印结果
-    print("Aligned Consumption Data:", aligned_consumption_data)
-    print("Aligned Solar Data:", aligned_solar_data)
-    print("Aligned Time Stamps:", aligned_time_stamps)
-        # 计算对齐后的数据末尾的时间差
-    length_consumption = len(aligned_consumption_data)
-    length_solar = len(aligned_solar_data)
-    # 计算末尾相差的时间单元（15分钟为单位）
-    time_diff_units = length_consumption - length_solar
-    print(f"Time difference in units (15 minutes): {time_diff_units}")
-
     # to predict next 30 days
     predicted_consumption = predict_series(consumption_data,  displayTitle='Consumption', save_path='predicted_consumption.png',display=True)
     predicted_solar = predict_series(solar_data, displayTitle='Solar', save_path='predicted_solar.png',display=True)

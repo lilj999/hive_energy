@@ -2,6 +2,7 @@ from datetime import datetime
 from distutils.util import strtobool
 
 import pandas as pd
+from datetime import timedelta
 
 # Converts the contents in a .tsf file into a dataframe and returns it along with other meta-data of the dataset: frequency, horizon, whether the dataset contains missing values and whether the series have equal lengths
 #
@@ -153,26 +154,40 @@ def convert_tsf_to_dataframe(
             contain_equal_length,
         )
 
+def last_timestamps(loaded_data):
+    time_stamps=[]
+    for i in range(len(loaded_data['series_value'])):
+        series_name = loaded_data['series_name'][i]
+       
+        start_timestamp= pd.Timestamp(loaded_data['start_timestamp'][i])
+        n_points = len(loaded_data['series_value'][i])
+        last_timestamp= start_timestamp + timedelta(minutes=15 * (n_points-1))
+        time_stamps.append(last_timestamp)
+    return time_stamps
+
 if __name__ == "__main__":
     #Example of usage
-    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("../dataset/phase_1_data.tsf")
+    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("data/phase_1_data.tsf")
 
     print('1',loaded_data)
     print(frequency)
     print(forecast_horizon)
     print(contain_missing_values)
     print(contain_equal_length)
-    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("../dataset/phase_2_data.tsf")
+    print('last_timestamps:',last_timestamps(loaded_data))
+    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("data/phase_2_data.tsf")
 
     print('2',loaded_data)
     print(frequency)
     print(forecast_horizon)
     print(contain_missing_values)
     print(contain_equal_length)
-    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("../dataset/final_test_data.tsf")
+    print('last_timestamps:',last_timestamps(loaded_data))
+    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("data/final_test_data.tsf")
 
     print('final_test_data',loaded_data)
     print(frequency)
     print(forecast_horizon)
     print(contain_missing_values)
     print(contain_equal_length)
+    print('last_timestamps:',last_timestamps(loaded_data))
