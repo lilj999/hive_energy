@@ -155,7 +155,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     #time_series_data = np.sin(np.linspace(0, 10 * np.pi, 1440)) + np.random.normal(0, 0.1, 1440)
 
-    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("../dataset/phase_1_data.tsf")
+    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("data/phase_1_data.tsf")
     start_timestamp= loaded_data['start_timestamp'][1]
     series_values= np.array(loaded_data['series_value'][0])
     #time_series_data=series_values[-1000:]

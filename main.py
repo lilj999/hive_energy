@@ -59,7 +59,7 @@ def calculate_savings(predicted_solar, predicted_consumption, electricity_rate=0
 
 if __name__ == "__main__":
     # Load and preprocess data
-    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("../dataset/phase_1_data.tsf")
+    loaded_data, frequency, forecast_horizon, contain_missing_values, contain_equal_length = convert_tsf_to_dataframe("data/phase_1_data.tsf")
     for i in range(len(loaded_data['series_value'])):
         loaded_data['series_value'].ffill( inplace=True)
     
