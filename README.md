@@ -23,6 +23,7 @@ The dataset for this project can be downloaded from the official IEEE Dataport c
 ## 🛠️ Run Demo  
 
 1. Run demo
+   
    python main.py    
 
-2. Enjoy it.
+3. Enjoy it.
