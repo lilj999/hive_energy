@@ -124,7 +124,7 @@ class TimeSeriesPredictor:
             plt.show()
 
 # Predict for the next 30 days (assuming each day has 96 steps)
-def predict_series(series_values, forecast_steps= 96 * 30,  displayTitle = 'Time Series', save_path=None,display=True):
+def predict_series(series_values, forecast_steps= 96 * 30,  epochs=50, displayTitle = 'Time Series', save_path=None,display=True):
     df = pd.DataFrame({
         'Demand': pd.to_numeric(series_values, errors='coerce') 
     }) 
@@ -136,7 +136,7 @@ def predict_series(series_values, forecast_steps= 96 * 30,  displayTitle = 'Time
     time_series_data = df['Demand'].values
 
     # Initialize predictor
-    predictor = TimeSeriesPredictor(input_length=96*7, output_length=96, epochs=100)
+    predictor = TimeSeriesPredictor(input_length=96*7, output_length=96, epochs=epochs)
 
     # Train model
     train_data = time_series_data[-2000:]#[0:2000]

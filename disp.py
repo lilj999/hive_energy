@@ -77,8 +77,13 @@ def get_pair(input_name):
 def main():
     dataset_names = ["data/phase_1_data.tsf", "data/phase_2_data.tsf","data/final_test_data.tsf"]
     dataset_filename = dataset_names[0]
-    st.session_state.dataset_filename =dataset_filename
-    st.session_state.time_series_data = load_default(tsf_filename=dataset_filename,sample_count=5000)    
+    # 初始化 session_state 的属性（如果它们还没有初始化）
+    if 'dataset_filename' not in st.session_state:
+        st.session_state.dataset_filename = dataset_filename  # 设置默认数据集
+
+    if 'time_series_data' not in st.session_state:
+        st.session_state.time_series_data = load_default(tsf_filename=dataset_filename, sample_count=5000)    
+       
     # 设置标题
     st.title("Energy Data Management and Prediction")
     
@@ -100,7 +105,7 @@ def main():
         for name, data in time_series_data.items():
             ax.plot(data["time"], data["data"], label=f"{name}")  # 绘制所有时序数据
         ax.set_title("Original Time Series Data - All Series")
-        ax.set_xlabel("Time")
+        ax.set_xlabel("Date")
         ax.set_ylabel("Value")
         ax.legend()
         st.pyplot(fig)
@@ -112,6 +117,7 @@ def main():
         st.subheader("View Original Data")
         st.markdown(f"### Dataset: {st.session_state.dataset_filename}")
         time_series_data =st.session_state.time_series_data 
+        
         # 选择时序数据
         series_names = list(time_series_data.keys())[:5]
         selected_series = st.selectbox("Select a building", series_names)
@@ -140,6 +146,10 @@ def main():
 
         building_data = time_series_data[buildingname]
         solar_data = time_series_data[buildingname]
+        st.markdown(f"### Original: {buildingname}, {solarname}")
+        st.line_chart(pd.DataFrame(building_data["data"], index=building_data["time"]), color='#ff0000')
+        st.line_chart(pd.DataFrame(solar_data["data"], index=solar_data["time"]), color='#ffaa00')
+
         # 输入预测终点时间
         last_time_stamp = pd.Timestamp(building_data["time"][-1])
         st.write(f"Last time point: {last_time_stamp}")
@@ -154,33 +164,44 @@ def main():
         # 计算预测步数
         time_diff = prediction_end_time - last_time_stamp  # 时间差
         forecast_steps = int(time_diff.total_seconds() // 60 // 15)  # 总秒数除以每步15分钟的秒数，得到预测步数
-        
+
         st.write(f"Number of forecast steps: {forecast_steps}")
         
         # 生成预测按钮
         if st.button("Generate Prediction"):
 
-            with st.spinner('Generating predictions...'):
+            with st.spinner('Generating predictions (about two minutes)...'):
             # 预测未来的数据
-                predicted_consumption = predict_series(building_data["data"], forecast_steps=forecast_steps,displayTitle='Consumption', save_path='predicted_consumption.png',display=False)
-                predicted_solar = predict_series(solar_data["data"], forecast_steps=forecast_steps,displayTitle='Solar', save_path='predicted_solar.png',display=False)
+                predicted_consumption = predict_series(building_data["data"], forecast_steps=forecast_steps,epochs=50,displayTitle='Consumption', save_path='predicted_consumption.png',display=False)
+                predicted_solar = predict_series(solar_data["data"], forecast_steps=forecast_steps,epochs=50,displayTitle='Solar', save_path='predicted_solar.png',display=False)
                 st.success("Prediction generated successfully!")
+
+                st.session_state.predicted_consumption = predicted_consumption
+                st.session_state.predicted_solar =predicted_solar
                 # 生成未来的时间戳
                 future_time_stamps = [last_time_stamp + timedelta(minutes=15 * i) for i in range(1, forecast_steps)]
                 
                 # 绘制原始数据和预测数据
+                st.markdown(f"### Predctions: {buildingname}, {solarname}")
                 fig, ax = plt.subplots(figsize=(10, 6))
                 ax.plot(building_data["time"], building_data["data"], label="Actual Consumption", color='red')
-                ax.plot(future_time_stamps, predicted_consumption, label="Predicted Consumption", color='red', linestyle='--')  # 虚线
-                ax.plot(building_data["time"], solar_data["data"], label="Actual Solar", color='orange')
-                ax.plot(future_time_stamps, predicted_solar, label="Predicted Solar", color='orange', linestyle='--')  # 虚线
+                ax.plot(future_time_stamps, predicted_consumption, label="Predicted Consumption", color='pink', linestyle='--')  # 虚线
                 ax.axvline(x=building_data["time"][-1], color='red', linestyle='--', label="Prediction Start")
                 ax.set_title(f"{selected_series} - Prediction")
-                ax.set_xlabel("Time")
+                ax.set_xlabel("Date")
                 ax.set_ylabel("Value")
                 ax.legend()
                 st.pyplot(fig)
 
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.plot(building_data["time"], solar_data["data"], label="Actual Solar", color='orange')
+                ax.plot(future_time_stamps, predicted_solar, label="Predicted Solar", color='yellow', linestyle='--')  # 虚线
+                ax.axvline(x=building_data["time"][-1], color='red', linestyle='--', label="Prediction Start")
+                ax.set_title(f"{selected_series} - Prediction")
+                ax.set_xlabel("Date")
+                ax.set_ylabel("Value")
+                ax.legend()
+                st.pyplot(fig)
             
             # 计算预测误差和节省（假设模型为一个简单的电费节省模型）
             original_cost=np.sum(predicted_consumption) * 0.12
