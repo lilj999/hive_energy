@@ -239,10 +239,10 @@ def main():
             ax.legend()
             ax.grid(True)
             st.pyplot(fig)
-            st.write(f"Predicted Energy Consumption (kWh): {sum(predicted_consumption):.2f} = {predicted_consumption}")
-            st.write(f"Predicted Solar Energy Generation (kWh): {sum(predicted_solar):.2f} =  {predicted_solar}")
-            st.write(f"Energy Shortfall (kWh): {sum(energy_shortfall):.2f} =  {energy_shortfall}")
-            st.write(f"Solar Savings (kWh):  {sum(solar_savings):.2f} = {solar_savings}")
+            st.write(f"Predicted Energy Consumption (kWh): {sum(predicted_consumption):.2f}")
+            st.write(f"Predicted Solar Energy Generation (kWh): {sum(predicted_solar):.2f} ")
+            st.write(f"Energy Shortfall (kWh): {sum(energy_shortfall):.2f} ")
+            st.write(f"Solar Savings (kWh):  {sum(solar_savings):.2f} ")
 
 
             st.markdown(f"### Solar generation that contributes to savings: ")
