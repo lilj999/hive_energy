@@ -94,7 +94,7 @@ def main():
         st.subheader("Choose Dataset")
         # 选择数据文件
         dataset_filename = st.selectbox("Select a dataset", dataset_names, index=dataset_names.index(st.session_state.dataset_filename) if st.session_state.dataset_filename else 0)
-        default_sample_count = 5000
+        default_sample_count = 3000
         sample_count = st.number_input("Input sample count", value=default_sample_count, min_value=100)
         time_series_data = load_default(tsf_filename=dataset_filename,sample_count=sample_count) 
         st.session_state.time_series_data = time_series_data
@@ -172,12 +172,10 @@ def main():
 
             with st.spinner('Generating predictions (about two minutes)...'):
             # 预测未来的数据
-                predicted_consumption = predict_series(building_data["data"], forecast_steps=forecast_steps,epochs=50,displayTitle='Consumption', save_path='predicted_consumption.png',display=False)
-                predicted_solar = predict_series(solar_data["data"], forecast_steps=forecast_steps,epochs=50,displayTitle='Solar', save_path='predicted_solar.png',display=False)
+                predictor1,train_data1,predicted_consumption = predict_series(building_data["data"], forecast_steps=forecast_steps,epochs=50,displayTitle='Consumption', save_path='predicted_consumption.png',display=False)
+                predictor2,train_data2,predicted_solar = predict_series(solar_data["data"], forecast_steps=forecast_steps,epochs=50,displayTitle='Solar', save_path='predicted_solar.png',display=False)
                 st.success("Prediction generated successfully!")
 
-                st.session_state.predicted_consumption = predicted_consumption
-                st.session_state.predicted_solar =predicted_solar
                 # 生成未来的时间戳
                 future_time_stamps = [last_time_stamp + timedelta(minutes=15 * i) for i in range(1, forecast_steps)]
                 
@@ -192,6 +190,12 @@ def main():
                 ax.set_ylabel("Value")
                 ax.legend()
                 st.pyplot(fig)
+                len1 = min(len(train_data1),len(predicted_consumption))
+                mae, mse, rmse, r2=predictor1.evaluate_metrics(train_data1[-len1:], predicted_consumption[-len1:])
+                st.write('Mean Absolute Error (MAE):',mae)
+                st.write('Mean Squared Error (MSE):', mse)
+                st.write( 'Root Mean Squared Error (RMSE):',rmse)
+                st.write( 'R² Score (Coefficient of Determination):',r2)
 
                 fig, ax = plt.subplots(figsize=(10, 6))
                 ax.plot(building_data["time"], solar_data["data"], label="Actual Solar", color='orange')
@@ -202,6 +206,12 @@ def main():
                 ax.set_ylabel("Value")
                 ax.legend()
                 st.pyplot(fig)
+                len2 = min(len(train_data2),len(predicted_solar))
+                mae, mse, rmse, r2=predictor1.evaluate_metrics(train_data2[-len2:], predicted_solar[-len2:])
+                st.write('Mean Absolute Error (MAE):',mae)
+                st.write('Mean Squared Error (MSE):', mse)
+                st.write( 'Root Mean Squared Error (RMSE):',rmse)
+                st.write( 'R² Score (Coefficient of Determination):',r2)
             
             # 计算预测误差和节省（假设模型为一个简单的电费节省模型）
             original_cost=np.sum(predicted_consumption) * 0.12
@@ -211,6 +221,7 @@ def main():
             total_savings = np.sum(savings) * 0.12
             # 
             final_cost= original_cost -total_savings
+            st.markdown(f"### Solar generation that contributes to savings: ")
             #return total_savings, original_cost, final_cost
             st.write(f"Predicted monthly original cost: ${original_cost:.2f}")
             st.write(f"Predicted monthly savings: ${total_savings:.2f}")

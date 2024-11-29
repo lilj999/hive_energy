@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from data_loader import convert_tsf_to_dataframe
 import pandas as pd
 import tqdm
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 class TimeSeriesDataset(Dataset):
     def __init__(self, X, y):
@@ -123,6 +124,14 @@ class TimeSeriesPredictor:
         if display:
             plt.show()
 
+    def evaluate_metrics(self, actual, predicted):
+        """评估模型的性能，返回 MAE, MSE, RMSE 和 R²"""
+        mae = mean_absolute_error(actual, predicted)
+        mse = mean_squared_error(actual, predicted)
+        rmse = np.sqrt(mse)
+        r2 = r2_score(actual, predicted)
+        return mae, mse, rmse, r2
+
 # Predict for the next 30 days (assuming each day has 96 steps)
 def predict_series(series_values, forecast_steps= 96 * 30,  epochs=50, displayTitle = 'Time Series', save_path=None,display=True):
     df = pd.DataFrame({
@@ -136,10 +145,10 @@ def predict_series(series_values, forecast_steps= 96 * 30,  epochs=50, displayTi
     time_series_data = df['Demand'].values
 
     # Initialize predictor
-    predictor = TimeSeriesPredictor(input_length=96*7, output_length=96, epochs=epochs)
+    predictor = TimeSeriesPredictor(input_length=96*10, output_length=96, epochs=epochs)
 
     # Train model
-    train_data = time_series_data[-2000:]#[0:2000]
+    train_data = time_series_data#[-2000:]#[0:2000]
     predictor.train(train_data)
 
     # Predict for the next 30 days (assuming each day has 96 steps)
@@ -148,7 +157,7 @@ def predict_series(series_values, forecast_steps= 96 * 30,  epochs=50, displayTi
     # Visualize predictions
     predictor.plot_predictions(time_series_data[-2000:], predictions, title=f"{displayTitle} Prediction for Next 30 Days", save_path=save_path,display=display)
 
-    return predictions
+    return predictor,train_data,predictions
 
 if __name__ == "__main__":
     # Generate synthetic time series data
@@ -160,4 +169,10 @@ if __name__ == "__main__":
     series_values= np.array(loaded_data['series_value'][0])
     #time_series_data=series_values[-1000:]
 
-    predict_series(series_values=series_values,display=True)
+    predictor,train_data,predictions=predict_series(series_values=series_values[-3000:],forecast_steps= 96 * 10,display=True)
+    len1 = min(len(train_data),len(predictions))
+    mae, mse, rmse, r2=predictor.evaluate_metrics(train_data[-len1:], predictions[-len1:])
+    print('Mean Absolute Error (MAE):',mae)
+    print('Mean Squared Error (MSE):', mse)
+    print( 'Root Mean Squared Error (RMSE):',rmse)
+    print( 'R² Score (Coefficient of Determination):',r2)
