@@ -229,7 +229,7 @@ def main():
             #solar_savings = predicted_solar - energy_shortfall # Energy used from solar power
 
             # Display results
-            st.markdown(f"### Energy Consumption, Solar Energy, Shortfall(if only solar): ")
+            st.markdown(f"### Preticted Energy Consumption, Solar Energy, Shortfall(if only solar): ")
             # Plot the data
             fig, ax = plt.subplots(figsize=(10, 6))
             ax.plot(future_time_stamps,predicted_consumption, label="Predicted Energy Consumption (kWh)", color='blue')
