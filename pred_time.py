@@ -176,3 +176,6 @@ if __name__ == "__main__":
     print('Mean Squared Error (MSE):', mse)
     print( 'Root Mean Squared Error (RMSE):',rmse)
     print( 'R² Score (Coefficient of Determination):',r2)
+
+
+    

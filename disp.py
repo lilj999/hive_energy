@@ -145,7 +145,7 @@ def main():
         buildingname, solarname= get_pair(selected_series)
 
         building_data = time_series_data[buildingname]
-        solar_data = time_series_data[buildingname]
+        solar_data = time_series_data[solarname]
         st.markdown(f"### Original: {buildingname}, {solarname}")
         st.line_chart(pd.DataFrame(building_data["data"], index=building_data["time"]), color='#ff0000')
         st.line_chart(pd.DataFrame(solar_data["data"], index=solar_data["time"]), color='#ffaa00')
@@ -154,6 +154,11 @@ def main():
         last_time_stamp = pd.Timestamp(building_data["time"][-1])
         st.write(f"Last time point: {last_time_stamp}")
         
+        default_electricity_rate = 0.12
+        electricity_rate = st.number_input("Input electricity rate($)", value=default_electricity_rate, max_value=100.0)
+        default_guaranteed_savings_percentage = 10
+        guaranteed_savings_percentage = st.number_input("Input guaranteed savings percentage(%)", value=default_guaranteed_savings_percentage, min_value=0,max_value=100)
+
         # 设置默认值为 last_time_stamp 后的 10 天
         default_prediction_end_time = last_time_stamp + pd.Timedelta(days=10)
         prediction_end_time = st.date_input("Select Prediction End Time", value=default_prediction_end_time)
@@ -207,25 +212,57 @@ def main():
                 ax.legend()
                 st.pyplot(fig)
                 len2 = min(len(train_data2),len(predicted_solar))
-                mae, mse, rmse, r2=predictor1.evaluate_metrics(train_data2[-len2:], predicted_solar[-len2:])
+                mae, mse, rmse, r2=predictor2.evaluate_metrics(train_data2[-len2:], predicted_solar[-len2:])
                 st.write('Mean Absolute Error (MAE):',mae)
                 st.write('Mean Squared Error (MSE):', mse)
                 st.write( 'Root Mean Squared Error (RMSE):',rmse)
                 st.write( 'R² Score (Coefficient of Determination):',r2)
-            
-            # 计算预测误差和节省（假设模型为一个简单的电费节省模型）
-            original_cost=np.sum(predicted_consumption) * 0.12
-            # Solar generation that contributes to savings
-            savings = predicted_solar * 0.1
-            # Assuming consumption is higher than solar generation, the savings is limited to solar generation
-            total_savings = np.sum(savings) * 0.12
-            # 
-            final_cost= original_cost -total_savings
+
+            # Calculate the difference between consumption and solar energy generation
+            energy_shortfall = predicted_consumption - predicted_solar
+            energy_shortfall[energy_shortfall < 0] = 0  # No shortfall if solar generation exceeds consumption
+
+            # Calculate savings from using solar power instead of grid power
+            solar_savings = predicted_solar - energy_shortfall  # Energy used from solar power
+
+            # Display results
+            st.markdown(f"### Energy Consumption, Solar Energy, Shortfall, and Savings: ")
+            # Plot the data
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.plot(future_time_stamps,predicted_consumption, label="Predicted Energy Consumption (kWh)", color='blue')
+            ax.plot(future_time_stamps,predicted_solar, label="Predicted Solar Energy (kWh)", color='orange')
+            ax.plot(future_time_stamps,energy_shortfall, label="Energy Shortfall (kWh)", color='red')
+            ax.plot(future_time_stamps,solar_savings, label="Solar Savings (kWh)", color='green')
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Energy (kWh)")
+            ax.set_title("Energy Consumption, Solar Energy, Shortfall, and Savings")
+            ax.legend()
+            ax.grid(True)
+            st.pyplot(fig)
+            st.write(f"Predicted Energy Consumption (kWh): {sum(predicted_consumption):.2f} = {predicted_consumption}")
+            st.write(f"Predicted Solar Energy Generation (kWh): {sum(predicted_solar):.2f} =  {predicted_solar}")
+            st.write(f"Energy Shortfall (kWh): {sum(energy_shortfall):.2f} =  {energy_shortfall}")
+            st.write(f"Solar Savings (kWh):  {sum(solar_savings):.2f} = {solar_savings}")
+
+
             st.markdown(f"### Solar generation that contributes to savings: ")
+            # Assumptions
+            electricity_rate = 0.12  # Cost per kWh in dollars
+            #max_bill_amount = 150  # Maximum bill amount in dollars
+            guaranteed_savings_rate = guaranteed_savings_percentage/100.0  # 10% savings based on total solar generation
+
+            # Calculate cost savings from solar energy
+            savings_from_solar = min(np.sum(predicted_solar) * guaranteed_savings_rate, np.sum(predicted_consumption) * electricity_rate)
+
+            # Calculate the total bill if all energy is purchased from the grid
+            original_cost=np.sum(predicted_consumption) *electricity_rate
+            # Calculate final cost for the resident, taking into account savings
+            final_bill = max(0, original_cost - savings_from_solar)
+            # 计算预测误差和节省（假设模型为一个简单的电费节省模型）
             #return total_savings, original_cost, final_cost
             st.write(f"Predicted monthly original cost: ${original_cost:.2f}")
-            st.write(f"Predicted monthly savings: ${total_savings:.2f}")
-            st.write(f"Predicted monthly final cost: ${final_cost:.2f}")
+            st.write(f"Predicted monthly savings: ${savings_from_solar:.2f}")
+            st.write(f"Predicted monthly final cost: ${final_bill:.2f}")
     
     
     # 显示时序数据的总结统计
